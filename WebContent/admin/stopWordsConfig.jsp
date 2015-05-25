@@ -2,15 +2,13 @@
 	pageEncoding="ISO-8859-1"%>
 <%@ page import="java.util.ResourceBundle"  %>
 <%@ page import="java.util.Locale" %>
-<%@ page import="com.francelabs.datafari.servlets.*" %>
 <!DOCTYPE html>
-
 
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-		<title>Capsule Configuration</title>
+		<title>stopWords Configuration</title>
 		<link rel="icon" type="image/png" href="images/bullet.png">
 		<link rel="stylesheet" type="text/css" href="../css/main.css" media="screen" />
 		<link rel="stylesheet" type="text/css" href="../css/admin.css" media="screen" />
@@ -26,35 +24,31 @@
 <br /> <br />
 <div class="adminConfig">
 <% ResourceBundle resourceBundle = ResourceBundle.getBundle("com.francelabs.i18n.text", request.getLocale()); %>
-	<% if(request.getAttribute("errorCapsule") != null) {%>	
-	 <form method = post Action="Admin">
-	 <fieldset>
- 		<legend><%out.print(request.getAttribute("errorCapsule").toString());%></legend>
-  		answer(yes to override): <input type="text"name="answer"id="answer" required/><br>
-		 <input type="submit" value="Answer" />
-	 </fieldset>
-	 </form>
-	 <% }else{ %>
-<FORM method = post Action = "Admin">
- <fieldset>
-  <legend>Capsule perso:</legend>
-  keyword: <input type="text"name="keyword"id="keyword" required/><br>
-  title: <input type="text"name="title"id="title" required/><br>
-  content: <input type="text"name="value"id="value" required/><br>
-  date beginning : <input type="date" name="dateB" id="dateB" /><br>
-  date end : <input type="date" name="dateE" id="dateE" /><br>
-  <input type="submit" value="Post" />
+	
+<h3><%= resourceBundle.getString("stopwordTitle") %></h3>
+<div id="stopwordLeft">
+<%= resourceBundle.getString("stopwordIntro") %><br/><br/>
+<%= resourceBundle.getString("stopwordTechno") %><br/><br/>
+<%= resourceBundle.getString("stopwordHelp") %><br/><br/>
 
- </fieldset>
-</FORM>
-<%} %>
+<form action="stopWords.jsp" method="post"
+                        enctype="multipart/form-data">
+<input type="file" name="file" size="30" />
+<br />
+<input type="submit" value="<%= resourceBundle.getString("stopwordSend") %>" id="submitstopwords" />
+<%= resourceBundle.getString("stopwordSelection") %>
+</form><br /><br />
+
+<form action="download.jsp">
+    <input type="submit" value="<%= resourceBundle.getString("stopwordDownloadButton") %>" id="downloadstopwords" >
+    <%= resourceBundle.getString("stopwordDownload") %> <br/>
+</form> 
+
  
 </div>
 
+</div>
 
 	<jsp:include page="../footer.jsp" />
 </body>
 </html>
-
-
-

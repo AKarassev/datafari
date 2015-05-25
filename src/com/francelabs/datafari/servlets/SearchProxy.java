@@ -17,7 +17,12 @@ package com.francelabs.datafari.servlets;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
+
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
@@ -39,7 +45,8 @@ import org.apache.solr.response.JSONResponseWriter;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.search.SolrIndexSearcher;
-
+import org.json.JSONException;
+import org.json.JSONObject;
 import com.francelabs.datafari.solrj.SolrServers;
 import com.francelabs.datafari.solrj.SolrServers.Core;
 import com.francelabs.datafari.statistics.StatsProcessor;
@@ -83,12 +90,14 @@ public class SearchProxy extends HttpServlet {
 		}
 
 		SolrServer solr;
+		SolrServer solrBis = null;
 		QueryResponse queryResponse = null;
+		QueryResponse queryResponseBis = null;
 		SolrQuery query = new SolrQuery();
+		SolrQuery queryBis = new SolrQuery();
 
 		ModifiableSolrParams params = new ModifiableSolrParams(
 				request.getParameterMap());
-
 		try {
 			switch (handler) {
 			case "/stats":
@@ -97,6 +106,7 @@ public class SearchProxy extends HttpServlet {
 				break;
 			default:
 				solr = SolrServers.getSolrServer(Core.FILESHARE);
+				solrBis = SolrServers.getSolrServer(Core.CAPSULE); 
 				/*
 				 * if (request.getUserPrincipal() != null) { String
 				 * AuthenticatedUserName = request.getUserPrincipal()
@@ -118,7 +128,14 @@ public class SearchProxy extends HttpServlet {
 			query.add(params);
 			query.setRequestHandler(handler);
 			queryResponse = solr.query(query);
-
+			if(solrBis != null && !(params.get("q").toString().equals("*:*"))){
+				if(params.get("q").startsWith("\"")){
+					queryBis.setQuery(params.get("q"));
+				}else{
+					queryBis.setQuery("\""+params.get("q")+"\"");
+				}
+				queryResponseBis = solrBis.query(queryBis);
+			}
 			switch (handler) {
 			case "/select":
 				// index
@@ -138,7 +155,12 @@ public class SearchProxy extends HttpServlet {
 				break;
 			}
 
-			writeSolrJResponse(request, response, query, queryResponse);
+			if(solrBis != null){
+				writeSolrJResponse(request, response, query, queryResponse, queryBis, queryResponseBis);
+			}
+			else {
+				writeSolrJResponse(request, response, query, queryResponse, null, null);
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -148,7 +170,8 @@ public class SearchProxy extends HttpServlet {
 
 	private void writeSolrJResponse(HttpServletRequest request,
 			HttpServletResponse response, final SolrQuery query,
-			QueryResponse queryResponse) throws IOException {
+			QueryResponse queryResponse, final SolrQuery queryBis,
+			QueryResponse queryResponseBis)throws IOException, JSONException, ParseException {
 		SolrQueryRequest req = new SolrQueryRequest() {
 			@Override
 			public SolrParams getParams() {
@@ -209,16 +232,61 @@ public class SearchProxy extends HttpServlet {
 			}
 
 		};
+		if(queryResponseBis != null){
+			SolrQueryResponse res = new SolrQueryResponse();
+			res.setAllValues(queryResponse.getResponse());
+			JSONResponseWriter jsonWriter = new JSONResponseWriter();
+			StringWriter s = new StringWriter();
 
-		SolrQueryResponse res = new SolrQueryResponse();
-		res.setAllValues(queryResponse.getResponse());
+			jsonWriter.write(s, req, res);
+			JSONObject json = new JSONObject(s.toString().substring(s.toString().indexOf("{")));
 
-		JSONResponseWriter json = new JSONResponseWriter();
-		json.write(response.getWriter(), req, res);
+			res.setAllValues(queryResponseBis.getResponse());
+			s = new StringWriter();
+			jsonWriter.write(s, req, res);
 
-		response.setStatus(200);
-		response.setContentType("text/json");
-
+			if ((s.toString().charAt(10+s.toString().indexOf("numFound")))!='0'){
+				JSONObject jsonTmp = new JSONObject(s.toString().substring(7+s.toString().indexOf("docs"), s.toString().length()-3));
+				if(jsonTmp.toString().indexOf("dateBeginning")==-1 && jsonTmp.toString().indexOf("dateEnd")==-1)
+					json.put("capsuleSearchComponent", jsonTmp);
+				else if(jsonTmp.toString().indexOf("dateBeginning")!=-1){
+					DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+					String d1 = jsonTmp.get("dateBeginning").toString();
+					d1 = d1.substring(2,d1.length()-3);
+					Date date = new Date(), date1 = dateFormat.parse(d1);
+					if(jsonTmp.toString().indexOf("dateEnd")!=-1){
+						String d2 = jsonTmp.get("dateEnd").toString();
+						d2 = d2.substring(2,d2.length()-3);
+						Date date2 = dateFormat.parse(d2);
+						if(date.compareTo(date1)>0 && date.compareTo(date2)<0)
+							json.put("capsuleSearchComponent", jsonTmp);
+					}
+					else{
+						if(date.compareTo(date1)>0)
+							json.put("capsuleSearchComponent", jsonTmp);
+					}
+				}
+				else{
+					DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+					String d1 = jsonTmp.get("dateEnd").toString();
+					d1 = d1.substring(2,d1.length()-3);
+					Date date = new Date(), date1 = dateFormat.parse(d1);
+					if(date.compareTo(date1)<0)
+						json.put("capsuleSearchComponent", jsonTmp);
+				}
+			}
+			String wrapperFunction = request.getParameter("json.wrf");
+			String finalString = wrapperFunction + "(" + json.toString() + ")";
+			response.getWriter().write(finalString);
+		}
+		else{
+			SolrQueryResponse res = new SolrQueryResponse();
+			JSONResponseWriter json = new JSONResponseWriter();
+			res.setAllValues(queryResponse.getResponse());
+			json.write(response.getWriter(), req, res);
+			response.setStatus(200);
+			response.setContentType("text/json");
+		}
 	}
 
 	private String getHandler(HttpServletRequest servletRequest) {

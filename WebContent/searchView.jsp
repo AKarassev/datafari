@@ -54,7 +54,7 @@
 		src="js/AjaxFranceLabs/widgets/Capsule.widget.js"></script>
 	<script type="text/javascript"
 		src="js/AjaxFranceLabs/widgets/TableMobile.widget.js"></script>
-	<script type="text/javascript"
+	<!-- <script type="text/javascript" -->
 	<script type="text/javascript"
 		src="js/AjaxFranceLabs/widgets/Spellchecker.widget.js"></script>
 

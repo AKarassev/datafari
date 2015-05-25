@@ -181,6 +181,7 @@ AjaxFranceLabs.SearchBarWidget = AjaxFranceLabs.AbstractWidget.extend({
 			search = search.replace(/\u200c/g, '');
 		switch ($(this.elm).find('input[name=searchType]:checked').val()) {
 		case "allWords":
+			//alert("a");
 			Manager.store.addByValue("q.op", 'AND');
 			break;
 		case "atLeastOneWord":

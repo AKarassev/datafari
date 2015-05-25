@@ -1,39 +1,35 @@
-<%@ page import="java.io.*,java.util.*, javax.servlet.*"%>
-<%@ page import="javax.servlet.http.*"%>
-<%@ page import="org.apache.commons.fileupload.*"%>
-<%@ page import="org.apache.commons.fileupload.disk.*"%>
-<%@ page import="org.apache.commons.fileupload.servlet.*"%>
-<%@ page import="org.apache.commons.io.output.*"%>
-<%@ page import="java.util.ResourceBundle"%>
-<%@ page import="java.nio.charset.StandardCharsets"%>
-<%@ page import="java.nio.charset.Charset"%>
-<%@ page import="java.nio.file.Path"%>
-<%@ page import="java.nio.file.Paths"%>
-<%@ page import="java.nio.file.Files"%>
+<%@ page import="java.io.*,java.util.*, javax.servlet.*" %>
+<%@ page import="javax.servlet.http.*" %>
+<%@ page import="org.apache.commons.fileupload.*" %>
+<%@ page import="org.apache.commons.fileupload.disk.*" %>
+<%@ page import="org.apache.commons.fileupload.servlet.*" %>
+<%@ page import="org.apache.commons.io.output.*" %>
+<%@ page import="java.util.ResourceBundle"  %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
+<%@ page import="java.nio.charset.Charset" %>
+<%@ page import="java.nio.file.Path" %>
+<%@ page import="java.nio.file.Paths" %>
+<%@ page import="java.nio.file.Files" %>
 
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
 <!DOCTYPE html>
-<html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-<title>Capsule Configuration file sent</title>
-<link rel="icon" type="image/png" href="images/bullet.png">
-<link rel="stylesheet" type="text/css" href="../css/main.css"
-	media="screen" />
-<link rel="stylesheet" type="text/css" href="../css/admin.css"
-	media="screen" />
-<script type="text/javascript" src="../js/jquery-1.8.1.min.js"></script>
-<script type="text/javascript" src="../js/menu.js"></script>
-</head>
-<body class="gecko win">
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<title>stopWords Configuration file sent</title>
+		<link rel="icon" type="image/png" href="images/bullet.png">
+		<link rel="stylesheet" type="text/css" href="../css/main.css" media="screen" />
+		<link rel="stylesheet" type="text/css" href="../css/admin.css" media="screen" />
+	    <script type="text/javascript" src="../js/jquery-1.8.1.min.js"></script>
+		<script type="text/javascript" src="../js/menu.js"></script>
+	</head>
+	<body class="gecko win">
 	<jsp:include page="../header.jsp" />
-	<jsp:include page="menu.jsp" />
+	<jsp:include page="menu.jsp" />	
 
-	<%
-	
+<%
 if (request.getContentType()!=null) {
 
 	ResourceBundle resourceBundle = ResourceBundle.getBundle("com.francelabs.i18n.text", request.getLocale()); 
@@ -42,6 +38,10 @@ if (request.getContentType()!=null) {
    int maxMemSize = 5000 * 1024;
    ServletContext context = pageContext.getServletContext();
     String filePath = context.getInitParameter("file-upload");
+
+    
+    
+
 	
    // Verify the content type
    String contentType = request.getContentType();
@@ -76,20 +76,21 @@ if (request.getContentType()!=null) {
             boolean isInMemory = fi.isInMemory();
             long sizeInBytes = fi.getSize();
             // Write the file
+            filePath = "/home/youp/git/datafari-master/solr/solr_home/FileShare/conf/";
             
-            file = new File( filePath +"capsules.txt");
+            file = new File( filePath +"stopwords.txt");
             fi.write( file ) ;
-			
-			
+						
 			Charset charset = StandardCharsets.UTF_8;
-			Path path = Paths.get(filePath +"capsules.txt");
+			Path path = Paths.get(filePath +"stopwords.txt");
 			String content = new String(Files.readAllBytes(path), charset);
 			content = content.replaceAll(" ", "\\\\ ");
 			Files.write(path, content.getBytes(charset));
 			
-            out.println(resourceBundle.getString("capsuleSuccess"));
+			
+            out.println(resourceBundle.getString("stopwordSuccess"));
 			out.println("<br />");
-			out.println(resourceBundle.getString("capsuleRestart"));
+			out.println(resourceBundle.getString("stopwordRestart"));
 			
             }
          }
@@ -111,7 +112,7 @@ if (request.getContentType()!=null) {
 		}
 %>
 
-	<jsp:include page="../footer.jsp" />
+<jsp:include page="../footer.jsp" />
 </body>
 </html>
 
